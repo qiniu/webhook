@@ -1,8 +1,6 @@
 Github.com webhook tools
 ==
 
-[![Build Status](https://travis-ci.org/qiniu/webhook.png?branch=master)](https://travis-ci.org/qiniu/webhook)
-
 [![Qiniu Logo](http://qiniutek.com/images/logo-2.png)](http://qiniu.com/)
 
 基于 Github webhook 做了个小工具。
