@@ -26,7 +26,7 @@ type Config struct {
 // --------------------------------------------------------------------------------
 
 type Repository struct {
-	Url string `json:"url"` // "https://github.com/qbox/base"
+	Url string `json:"url"` // "https://github.com/qiniu/api"
 }
 
 type Payload struct {
