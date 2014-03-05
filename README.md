@@ -31,6 +31,13 @@ go run github.go xxx.conf
 
 这个样例是真实的。它设置了 1 个 hook 脚本，在 https://github.com/qiniu/docs.qiniu.com 这个 repo 的 master 有变化时，自动执行 update-qiniu-docs.sh 脚本。
 
+## Bitbucket
+
+```
+go run bitbucket.go xxx.conf
+```
+
+这样就启动针对 bitbucket 的 webhook 服务器了。其中 conf 文件与github一致。
 
 # 与 Github 关联
 
