@@ -1,37 +1,45 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
-	"io/ioutil"
-	"net/url"
-	"net/http"
-	"encoding/json"
+	"strings"
 )
 
 // --------------------------------------------------------------------------------
 
 type WatchItem struct {
-	Repo string `json:"repo"`
+	Repo   string `json:"repo"`
 	Branch string `json:"branch"`
 	Script string `json:"script"`
 }
 
 type Config struct {
-	BindHost string `json:"bind"`
-	Items []WatchItem `json:"items"`
+	BindHost string      `json:"bind"`
+	Items    []WatchItem `json:"items"`
 }
 
 // --------------------------------------------------------------------------------
 
 type Repository struct {
-	Url string `json:"url"` // "https://github.com/qiniu/api"
+	Url         string `json:"url"` // "https://github.com/qiniu/api"
+	AbsoluteUrl string `json:"absolute_url"`
+}
+
+type Commit struct {
+	Branch string `json:"branch"`
 }
 
 type Payload struct {
-	Ref string `json:"ref"`	// "refs/heads/develop"
-	Repo Repository `json:"repository"`
+	Ref      string     `json:"ref"` // "refs/heads/develop"
+	Repo     Repository `json:"repository"`
+	CanonUrl string     `json:"canon_url"`
+	Commits  []Commit   `json:"commits"`
 }
 
 // --------------------------------------------------------------------------------
@@ -45,6 +53,33 @@ func runScript(item *WatchItem) (err error) {
 	}
 
 	log.Print("Run ", script, " output:\n", string(out))
+	return
+}
+
+func handleGithub(event Payload, cfg *Config) (err error) {
+	for _, item := range cfg.Items {
+		if event.Repo.Url == item.Repo && event.Ref == "refs/heads/"+item.Branch {
+			err = runScript(&item)
+			break
+		}
+	}
+	return
+}
+
+func handleBitbucket(event Payload, cfg *Config) (err error) {
+	changingBranches := make(map[string]bool)
+
+	for _, commit := range event.Commits {
+		changingBranches[commit.Branch] = true
+	}
+
+	repo := strings.TrimRight(event.CanonUrl+event.Repo.AbsoluteUrl, "/")
+
+	for _, item := range cfg.Items {
+		if strings.TrimRight(item.Repo, "/") == repo && changingBranches[item.Branch] {
+			runScript(&item)
+		}
+	}
 	return
 }
 
@@ -71,13 +106,11 @@ func handleQuery(query url.Values, cfg *Config) (err error) {
 		return
 	}
 
-	for _, item := range cfg.Items {
-		if event.Repo.Url == item.Repo && event.Ref == "refs/heads/" + item.Branch {
-			err = runScript(&item)
-			break
-		}
+	if event.CanonUrl == "https://bitbucket.org" {
+		return handleBitbucket(event, cfg)
 	}
-	return
+
+	return handleGithub(event, cfg)
 }
 
 // --------------------------------------------------------------------------------
@@ -114,4 +147,3 @@ func main() {
 }
 
 // --------------------------------------------------------------------------------
-

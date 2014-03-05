@@ -1,11 +1,11 @@
-Github.com webhook tools
+Github/Bitbucket webhook tools
 ==
 
 [![Qiniu Logo](http://qiniutek.com/images/logo-2.png)](http://qiniu.com/)
 
-基于 Github webhook 做了个小工具。
+基于 Github/Bitbucket webhook 做了个小工具。
 
-它能够做什么？简单来说，它就是一个让 Github repo 在某个分支发生 push 行为的时候，自动触发一段脚本。
+它能够做什么？简单来说，它就是一个让 Github/Bitbucket repo 在某个分支发生 push 行为的时候，自动触发一段脚本。
 
 # 用法
 
@@ -23,6 +23,11 @@ go run webhook.go xxx.conf
         "repo": "https://github.com/qiniu/docs.qiniu.com",
         "branch": "master",
         "script": "update-qiniu-docs.sh"
+    },
+    {
+        "repo": "https://bitbucket.org/Wuvist/angelbot/",
+        "branch": "master",
+        "script": "restart-angelbot.sh"
     }
 ]}
 ```
