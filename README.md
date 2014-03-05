@@ -9,11 +9,13 @@ Github.com webhook tools
 
 # 用法
 
+## Github
+
 ```
-go run webhook.go xxx.conf
+go run github.go xxx.conf
 ```
 
-这样就启动 webhook 服务器了。其中 conf 文件格式如下：
+这样就启动针对 github 的 webhook 服务器了。其中 conf 文件格式如下：
 
 ```
 {
