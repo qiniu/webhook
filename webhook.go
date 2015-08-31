@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -44,29 +43,35 @@ type Payload struct {
 
 // --------------------------------------------------------------------------------
 
-func runScript(item *WatchItem) (err error) {
+var cfg Config
 
+// --------------------------------------------------------------------------------
+
+func runScript(item *WatchItem) (err error) {
 	script := "./" + item.Script
 	out, err := exec.Command("bash", "-c", script).Output()
 	if err != nil {
-		log.Println("Exec command failed:", err)
+		log.Printf("Exec command failed: %s\n", err)
 	}
 
-	log.Print("Run ", script, " output:\n", string(out))
+	log.Printf("Run %s output: %s\n", script, string(out))
 	return
 }
 
 func handleGithub(event Payload, cfg *Config) (err error) {
 	for _, item := range cfg.Items {
-		if event.Repo.Url == item.Repo && event.Ref == "refs/heads/"+item.Branch {
+		if event.Repo.Url == item.Repo && strings.Contains(event.Ref, item.Branch) {
 			err = runScript(&item)
+			if err != nil {
+				log.Printf("run script error: %s\n", err)
+			}
 			break
 		}
 	}
 	return
 }
 
-func handleBitbucket(event Payload, cfg *Config) (err error) {
+func handleBitbucket(event Payload, cfg *Config) {
 	changingBranches := make(map[string]bool)
 
 	for _, commit := range event.Commits {
@@ -83,45 +88,26 @@ func handleBitbucket(event Payload, cfg *Config) (err error) {
 	return
 }
 
-func handleQuery(query url.Values, cfg *Config) (err error) {
-
-	payload := query.Get("payload")
-	b := []byte(payload)
-
-	var payloadObj map[string]interface{}
-	err = json.Unmarshal(b, &payloadObj)
-	if err != nil {
-		log.Println("json.Unmarshal payload failed:", err)
-		return
-	}
-
-	b, _ = json.MarshalIndent(payloadObj, "", "    ")
-	text := string(b)
-	log.Println(text)
+func handle(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
+	decoder := json.NewDecoder(req.Body)
 
 	var event Payload
-	err = json.Unmarshal(b, &event)
+	err := decoder.Decode(&event)
 	if err != nil {
-		log.Println("json.Unmarshal payload failed:", err)
+		log.Printf("payload json decode failed: %s\n", err)
 		return
 	}
 
 	if event.CanonUrl == "https://bitbucket.org" {
-		return handleBitbucket(event, cfg)
+		handleBitbucket(event, &cfg)
+		return
 	}
 
-	return handleGithub(event, cfg)
+	handleGithub(event, &cfg)
 }
 
 // --------------------------------------------------------------------------------
-
-var cfg Config
-
-func handle(w http.ResponseWriter, req *http.Request) {
-
-	req.ParseForm()
-	handleQuery(req.Form, &cfg)
-}
 
 func main() {
 
