@@ -9,13 +9,13 @@ Github/Bitbucket webhook tools
 
 # 用法
 
-```
-go run webhook.go xxx.conf
+```shell
+$ go run webhook.go xxx.conf
 ```
 
 这样就启动 webhook 服务器了。其中 conf 文件格式如下：
 
-```
+```json
 {
     "bind": ":9876",
     "items": [
