@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"bytes"
+	"fmt"
 )
 
 // --------------------------------------------------------------------------------
@@ -49,12 +51,19 @@ var cfg Config
 
 func runScript(item *WatchItem) (err error) {
 	script := "./" + item.Script
-	out, err := exec.Command("bash", "-c", script).Output()
+	cmd := exec.Command("bash", "-c", script)
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+
 	if err != nil {
-		log.Printf("Exec command failed: %s\n", err)
+		fmt.Println("Exec command failed, " + fmt.Sprint(err) + ": " + stderr.String())
 	}
 
-	log.Printf("Run %s output: %s\n", script, string(out))
+	log.Printf("Run %s output: %s\n", script, out.String())
 	return
 }
 
